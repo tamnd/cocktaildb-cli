@@ -51,14 +51,14 @@ func (Domain) Register(app *kit.App) {
 		Args:    []kit.Arg{{Name: "query", Help: "cocktail name to search"}},
 	}, searchOp)
 
-	// lookup: fetch drink by ID
+	// cocktail: fetch drink by ID
 	kit.Handle(app, kit.OpMeta{
-		Name:    "lookup",
+		Name:    "cocktail",
 		Group:   "read",
 		Single:  true,
 		Summary: "Fetch a cocktail by ID",
 		Args:    []kit.Arg{{Name: "id", Help: "drink ID"}},
-	}, lookupOp)
+	}, cocktailOp)
 
 	// random: one random drink
 	kit.Handle(app, kit.OpMeta{
@@ -104,7 +104,7 @@ type searchInput struct {
 	Client *Client       `kit:"inject"`
 }
 
-type lookupInput struct {
+type cocktailInput struct {
 	ID     string  `kit:"arg" help:"drink ID"`
 	Client *Client `kit:"inject"`
 }
@@ -120,7 +120,7 @@ type categoriesInput struct {
 
 // --- handlers ---
 
-func searchOp(ctx context.Context, in searchInput, emit func(Drink) error) error {
+func searchOp(ctx context.Context, in searchInput, emit func(Cocktail) error) error {
 	items, err := in.Client.Search(ctx, in.Query, in.Limit)
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func searchOp(ctx context.Context, in searchInput, emit func(Drink) error) error
 	return nil
 }
 
-func lookupOp(ctx context.Context, in lookupInput, emit func(Drink) error) error {
+func cocktailOp(ctx context.Context, in cocktailInput, emit func(Cocktail) error) error {
 	drink, err := in.Client.Lookup(ctx, in.ID)
 	if err != nil {
 		return err
@@ -141,7 +141,7 @@ func lookupOp(ctx context.Context, in lookupInput, emit func(Drink) error) error
 	return emit(drink)
 }
 
-func randomOp(ctx context.Context, in randomInput, emit func(Drink) error) error {
+func randomOp(ctx context.Context, in randomInput, emit func(Cocktail) error) error {
 	drink, err := in.Client.Random(ctx)
 	if err != nil {
 		return err

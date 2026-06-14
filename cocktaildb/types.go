@@ -1,28 +1,26 @@
 package cocktaildb
 
-import "strings"
+import (
+	"strings"
+)
 
-// Ingredient is one cocktail ingredient with its measure.
-type Ingredient struct {
-	Name    string `json:"name"`
-	Measure string `json:"measure"`
-}
-
-// Drink is one drink from TheCocktailDB.
-type Drink struct {
-	ID           string       `kit:"id" json:"id"`
-	Name         string       `json:"name"`
-	Category     string       `json:"category"`
-	Alcoholic    string       `json:"alcoholic"`
-	Glass        string       `json:"glass"`
-	Instructions string       `json:"instructions"`
-	Thumbnail    string       `json:"thumbnail"`
-	Ingredients  []Ingredient `json:"ingredients"`
+// Cocktail is one drink from TheCocktailDB.
+//
+// Ingredients is a comma-joined list of "ingredient:measure" pairs.
+// Instructions is truncated to 200 characters followed by "..." when longer.
+type Cocktail struct {
+	ID           string `kit:"id" json:"id"`           // idDrink
+	Name         string `json:"name"`                  // strDrink
+	Category     string `json:"category"`              // strCategory
+	Alcoholic    string `json:"alcoholic"`             // strAlcoholic
+	Glass        string `json:"glass"`                 // strGlass
+	Instructions string `json:"instructions"`          // strInstructions, first 200 chars + "..."
+	Ingredients  string `json:"ingredients"`           // "ingredient:measure" pairs, comma-joined
 }
 
 // Category is one list entry from TheCocktailDB (category, alcoholic type, glass, or ingredient).
 type Category struct {
-	Name string `kit:"id" json:"name"`
+	Name string `kit:"id" json:"name"` // strCategory
 }
 
 // --- wire types (unexported, only used for JSON decoding) ---
@@ -78,10 +76,9 @@ type listResponse struct {
 	Drinks []map[string]string `json:"drinks"`
 }
 
-// toIngredients converts the flat strIngredientN / strMeasureN fields into
-// a clean []Ingredient. Slots are filled consecutively; the loop stops on
-// the first empty name.
-func (r rawDrink) toIngredients() []Ingredient {
+// ingredientPairs builds "ingredient:measure" pairs from the flat strIngredientN /
+// strMeasureN fields. Iteration stops on the first empty ingredient name.
+func (r rawDrink) ingredientPairs() []string {
 	names := [15]string{
 		r.StrIngredient1, r.StrIngredient2, r.StrIngredient3,
 		r.StrIngredient4, r.StrIngredient5, r.StrIngredient6,
@@ -96,29 +93,35 @@ func (r rawDrink) toIngredients() []Ingredient {
 		r.StrMeasure10, r.StrMeasure11, r.StrMeasure12,
 		r.StrMeasure13, r.StrMeasure14, r.StrMeasure15,
 	}
-	var ings []Ingredient
+	var pairs []string
 	for i, name := range names {
-		if strings.TrimSpace(name) == "" {
+		name = strings.TrimSpace(name)
+		if name == "" {
 			break
 		}
-		ings = append(ings, Ingredient{
-			Name:    strings.TrimSpace(name),
-			Measure: strings.TrimSpace(measures[i]),
-		})
+		m := strings.TrimSpace(measures[i])
+		if m != "" {
+			pairs = append(pairs, name+":"+m)
+		} else {
+			pairs = append(pairs, name)
+		}
 	}
-	return ings
+	return pairs
 }
 
-// toDrink converts a rawDrink to a Drink.
-func toDrink(d rawDrink) Drink {
-	return Drink{
+// toCocktail converts a rawDrink to a Cocktail.
+func toCocktail(d rawDrink) Cocktail {
+	instr := d.StrInstructions
+	if len(instr) > 200 {
+		instr = instr[:200] + "..."
+	}
+	return Cocktail{
 		ID:           d.IDDrink,
 		Name:         d.StrDrink,
 		Category:     d.StrCategory,
 		Alcoholic:    d.StrAlcoholic,
 		Glass:        d.StrGlass,
-		Instructions: d.StrInstructions,
-		Thumbnail:    d.StrDrinkThumb,
-		Ingredients:  d.toIngredients(),
+		Instructions: instr,
+		Ingredients:  strings.Join(d.ingredientPairs(), ", "),
 	}
 }

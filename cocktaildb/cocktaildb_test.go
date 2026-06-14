@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/tamnd/cocktaildb-cli/cocktaildb"
@@ -40,6 +41,12 @@ const fakeGlassJSON = `{"drinks":[
   {"strGlass":"Highball glass"},
   {"strGlass":"Cocktail glass"},
   {"strGlass":"Old-fashioned glass"}
+]}`
+
+// longInstructionsJSON has instructions that are 250 chars to test truncation.
+// The value below is exactly 250 'A' characters.
+const longInstructionsJSON = `{"drinks":[
+  {"idDrink":"99001","strDrink":"LongDrink","strCategory":"Test","strAlcoholic":"Alcoholic","strGlass":"Glass","strInstructions":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","strIngredient1":"Water","strMeasure1":"1 oz"}
 ]}`
 
 func newTestClient(ts *httptest.Server) *cocktaildb.Client {
@@ -82,20 +89,22 @@ func TestSearchParsesItems(t *testing.T) {
 		t.Fatalf("len(items) = %d, want 2", len(items))
 	}
 	got := items[0]
+	if got.ID != "11007" {
+		t.Errorf("items[0].ID = %q, want 11007", got.ID)
+	}
 	if got.Name != "Margarita" {
 		t.Errorf("items[0].Name = %q, want Margarita", got.Name)
 	}
 	if got.Category != "Ordinary Drink" {
 		t.Errorf("items[0].Category = %q, want Ordinary Drink", got.Category)
 	}
-	if len(got.Ingredients) != 4 {
-		t.Errorf("len(items[0].Ingredients) = %d, want 4", len(got.Ingredients))
+	// Ingredients is a comma-joined "ingredient:measure" string
+	if !strings.Contains(got.Ingredients, "Tequila:1 1/2 oz") {
+		t.Errorf("items[0].Ingredients %q does not contain Tequila:1 1/2 oz", got.Ingredients)
 	}
-	if got.Ingredients[0].Name != "Tequila" {
-		t.Errorf("items[0].Ingredients[0].Name = %q, want Tequila", got.Ingredients[0].Name)
-	}
-	if got.Ingredients[0].Measure != "1 1/2 oz" {
-		t.Errorf("items[0].Ingredients[0].Measure = %q, want 1 1/2 oz", got.Ingredients[0].Measure)
+	// Salt has no measure so it appears without colon
+	if !strings.Contains(got.Ingredients, "Salt") {
+		t.Errorf("items[0].Ingredients %q does not contain Salt", got.Ingredients)
 	}
 	if items[1].Name != "Blue Margarita" {
 		t.Errorf("items[1].Name = %q, want Blue Margarita", items[1].Name)
@@ -165,6 +174,12 @@ func TestLookupByID(t *testing.T) {
 	if got.Name != "Margarita" {
 		t.Errorf("Name = %q, want Margarita", got.Name)
 	}
+	if got.Glass != "Cocktail glass" {
+		t.Errorf("Glass = %q, want Cocktail glass", got.Glass)
+	}
+	if got.Alcoholic != "Alcoholic" {
+		t.Errorf("Alcoholic = %q, want Alcoholic", got.Alcoholic)
+	}
 }
 
 func TestLookupNotFound(t *testing.T) {
@@ -180,7 +195,7 @@ func TestLookupNotFound(t *testing.T) {
 	}
 }
 
-func TestRandomParsesDrink(t *testing.T) {
+func TestRandomParsesCocktail(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, fakeRandomJSON)
 	}))
@@ -197,8 +212,9 @@ func TestRandomParsesDrink(t *testing.T) {
 	if got.Name != "Pisco Sour" {
 		t.Errorf("Name = %q, want Pisco Sour", got.Name)
 	}
-	if len(got.Ingredients) != 3 {
-		t.Errorf("len(Ingredients) = %d, want 3", len(got.Ingredients))
+	// 3 non-empty ingredients
+	if !strings.Contains(got.Ingredients, "Pisco:2 oz") {
+		t.Errorf("Ingredients %q does not contain Pisco:2 oz", got.Ingredients)
 	}
 }
 
@@ -312,5 +328,47 @@ func TestSearchNoResults(t *testing.T) {
 	}
 	if len(items) != 0 {
 		t.Errorf("len(items) = %d, want 0", len(items))
+	}
+}
+
+func TestInstructionsTruncatedAt200(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, longInstructionsJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	got, err := c.Lookup(context.Background(), "99001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(got.Instructions, "...") {
+		t.Errorf("Instructions should end with ..., got: %q", got.Instructions)
+	}
+	// 200 chars of content + 3 for "..." = 203
+	if len(got.Instructions) != 203 {
+		t.Errorf("Instructions len = %d, want 203", len(got.Instructions))
+	}
+}
+
+func TestIngredientsMeasureMissing(t *testing.T) {
+	// When a measure is empty, the ingredient should appear without colon
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, fakeLookupJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	got, err := c.Lookup(context.Background(), "11007")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Salt has empty measure in the fixture
+	if !strings.Contains(got.Ingredients, "Salt") {
+		t.Errorf("Ingredients %q should contain Salt", got.Ingredients)
+	}
+	// Should not have "Salt:" (colon with empty measure)
+	if strings.Contains(got.Ingredients, "Salt:") {
+		t.Errorf("Ingredients %q should not have Salt: (empty measure)", got.Ingredients)
 	}
 }
