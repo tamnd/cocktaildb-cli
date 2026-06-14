@@ -9,13 +9,13 @@ import (
 // Ingredients is a comma-joined list of "ingredient:measure" pairs.
 // Instructions is truncated to 200 characters followed by "..." when longer.
 type Cocktail struct {
-	ID           string `kit:"id" json:"id"`           // idDrink
-	Name         string `json:"name"`                  // strDrink
-	Category     string `json:"category"`              // strCategory
-	Alcoholic    string `json:"alcoholic"`             // strAlcoholic
-	Glass        string `json:"glass"`                 // strGlass
-	Instructions string `json:"instructions"`          // strInstructions, first 200 chars + "..."
-	Ingredients  string `json:"ingredients"`           // "ingredient:measure" pairs, comma-joined
+	ID           string `kit:"id" json:"id"`  // idDrink
+	Name         string `json:"name"`         // strDrink
+	Category     string `json:"category"`     // strCategory
+	Alcoholic    string `json:"alcoholic"`    // strAlcoholic
+	Glass        string `json:"glass"`        // strGlass
+	Instructions string `json:"instructions"` // strInstructions, first 200 chars + "..."
+	Ingredients  string `json:"ingredients"`  // "ingredient:measure" pairs, comma-joined
 }
 
 // Category is one list entry from TheCocktailDB (category, alcoholic type, glass, or ingredient).
