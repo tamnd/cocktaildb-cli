@@ -11,12 +11,35 @@ import (
 )
 
 const fakeSearchJSON = `{"drinks":[
-  {"idDrink":"11007","strDrink":"Margarita","strCategory":"Ordinary Drink","strAlcoholic":"Alcoholic","strGlass":"Cocktail glass","strInstructions":"Rub the rim with lime.","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg","strIngredient1":"Tequila","strMeasure1":"1 1/2 oz","strIngredient2":"Triple sec","strMeasure2":"1/2 oz","strIngredient3":"Lime juice","strMeasure3":"1 oz","strIngredient4":"Salt","strMeasure4":"","strIngredient5":"","strMeasure5":"","strIngredient6":"","strMeasure6":"","strIngredient7":"","strMeasure7":"","strIngredient8":"","strMeasure8":"","strIngredient9":"","strMeasure9":"","strIngredient10":"","strMeasure10":"","strIngredient11":"","strMeasure11":"","strIngredient12":"","strMeasure12":"","strIngredient13":"","strMeasure13":"","strIngredient14":"","strMeasure14":"","strIngredient15":"","strMeasure15":""},
-  {"idDrink":"11118","strDrink":"Blue Margarita","strCategory":"Ordinary Drink","strAlcoholic":"Alcoholic","strGlass":"Cocktail glass","strInstructions":"Rub rim of cocktail glass with lime juice.","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/qtvvyq1439905913.jpg","strIngredient1":"Tequila","strMeasure1":"1 1/2 oz","strIngredient2":"Blue Curacao","strMeasure2":"1 oz","strIngredient3":"Lime juice","strMeasure3":"1 oz","strIngredient4":"Salt","strMeasure4":"","strIngredient5":"","strMeasure5":"","strIngredient6":"","strMeasure6":"","strIngredient7":"","strMeasure7":"","strIngredient8":"","strMeasure8":"","strIngredient9":"","strMeasure9":"","strIngredient10":"","strMeasure10":"","strIngredient11":"","strMeasure11":"","strIngredient12":"","strMeasure12":"","strIngredient13":"","strMeasure13":"","strIngredient14":"","strMeasure14":"","strIngredient15":"","strMeasure15":""}
+  {"idDrink":"11007","strDrink":"Margarita","strCategory":"Ordinary Drink","strAlcoholic":"Alcoholic","strGlass":"Cocktail glass","strInstructions":"Rub the rim with lime.","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg","strIngredient1":"Tequila","strMeasure1":"1 1/2 oz","strIngredient2":"Triple sec","strMeasure2":"1/2 oz","strIngredient3":"Lime juice","strMeasure3":"1 oz","strIngredient4":"Salt","strMeasure4":"","strIngredient5":"","strMeasure5":""},
+  {"idDrink":"11118","strDrink":"Blue Margarita","strCategory":"Ordinary Drink","strAlcoholic":"Alcoholic","strGlass":"Cocktail glass","strInstructions":"Rub rim of cocktail glass with lime juice.","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/qtvvyq1439905913.jpg","strIngredient1":"Tequila","strMeasure1":"1 1/2 oz","strIngredient2":"Blue Curacao","strMeasure2":"1 oz","strIngredient3":"Lime juice","strMeasure3":"1 oz","strIngredient4":"Salt","strMeasure4":"","strIngredient5":"","strMeasure5":""}
+]}`
+
+const fakeLookupJSON = `{"drinks":[
+  {"idDrink":"11007","strDrink":"Margarita","strCategory":"Ordinary Drink","strAlcoholic":"Alcoholic","strGlass":"Cocktail glass","strInstructions":"Rub the rim with lime.","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg","strIngredient1":"Tequila","strMeasure1":"1 1/2 oz","strIngredient2":"Triple sec","strMeasure2":"1/2 oz","strIngredient3":"Lime juice","strMeasure3":"1 oz","strIngredient4":"Salt","strMeasure4":"","strIngredient5":"","strMeasure5":""}
 ]}`
 
 const fakeRandomJSON = `{"drinks":[
-  {"idDrink":"11007","strDrink":"Margarita","strCategory":"Ordinary Drink","strAlcoholic":"Alcoholic","strGlass":"Cocktail glass","strInstructions":"Rub the rim with lime.","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg","strIngredient1":"Tequila","strMeasure1":"1 1/2 oz","strIngredient2":"Triple sec","strMeasure2":"1/2 oz","strIngredient3":"Lime juice","strMeasure3":"1 oz","strIngredient4":"Salt","strMeasure4":"","strIngredient5":"","strMeasure5":"","strIngredient6":"","strMeasure6":"","strIngredient7":"","strMeasure7":"","strIngredient8":"","strMeasure8":"","strIngredient9":"","strMeasure9":"","strIngredient10":"","strMeasure10":"","strIngredient11":"","strMeasure11":"","strIngredient12":"","strMeasure12":"","strIngredient13":"","strMeasure13":"","strIngredient14":"","strMeasure14":"","strIngredient15":"","strMeasure15":""}
+  {"idDrink":"17222","strDrink":"Pisco Sour","strCategory":"Ordinary Drink","strAlcoholic":"Alcoholic","strGlass":"Whiskey sour glass","strInstructions":"Shake and strain into a chilled glass.","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/tsssur1439907622.jpg","strIngredient1":"Pisco","strMeasure1":"2 oz","strIngredient2":"Lemon juice","strMeasure2":"1 oz","strIngredient3":"Syrup","strMeasure3":"1/2 oz","strIngredient4":"","strMeasure4":""}
+]}`
+
+const fakeCategoriesJSON = `{"drinks":[
+  {"strCategory":"Beer"},
+  {"strCategory":"Cocktail"},
+  {"strCategory":"Ordinary Drink"},
+  {"strCategory":"Shot"}
+]}`
+
+const fakeAlcoholicJSON = `{"drinks":[
+  {"strAlcoholic":"Alcoholic"},
+  {"strAlcoholic":"Non alcoholic"},
+  {"strAlcoholic":"Optional alcohol"}
+]}`
+
+const fakeGlassJSON = `{"drinks":[
+  {"strGlass":"Highball glass"},
+  {"strGlass":"Cocktail glass"},
+  {"strGlass":"Old-fashioned glass"}
 ]}`
 
 func newTestClient(ts *httptest.Server) *cocktaildb.Client {
@@ -58,7 +81,6 @@ func TestSearchParsesItems(t *testing.T) {
 	if len(items) != 2 {
 		t.Fatalf("len(items) = %d, want 2", len(items))
 	}
-
 	got := items[0]
 	if got.Name != "Margarita" {
 		t.Errorf("items[0].Name = %q, want Margarita", got.Name)
@@ -123,28 +145,17 @@ func TestSearchRetriesOn503(t *testing.T) {
 	}
 }
 
-const fakeFilterJSON = `{"drinks":[
-  {"idDrink":"11007","strDrink":"Margarita","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"},
-  {"idDrink":"11118","strDrink":"Blue Margarita","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/qtvvyq1439905913.jpg"}
-]}`
-
-const fakeGlassesJSON = `{"drinks":[
-  {"strGlass":"Highball glass"},
-  {"strGlass":"Cocktail glass"},
-  {"strGlass":"Old-fashioned glass"}
-]}`
-
-func TestGetByID(t *testing.T) {
+func TestLookupByID(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("i") != "11007" {
 			t.Errorf("expected i=11007, got %q", r.URL.Query().Get("i"))
 		}
-		_, _ = fmt.Fprint(w, fakeRandomJSON)
+		_, _ = fmt.Fprint(w, fakeLookupJSON)
 	}))
 	defer ts.Close()
 
 	c := newTestClient(ts)
-	got, err := c.Get(context.Background(), "11007")
+	got, err := c.Lookup(context.Background(), "11007")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,77 +167,20 @@ func TestGetByID(t *testing.T) {
 	}
 }
 
-func TestGetNotFound(t *testing.T) {
+func TestLookupNotFound(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, `{"drinks":null}`)
 	}))
 	defer ts.Close()
 
 	c := newTestClient(ts)
-	_, err := c.Get(context.Background(), "99999999")
+	_, err := c.Lookup(context.Background(), "99999999")
 	if err == nil {
 		t.Error("expected error for not-found ID, got nil")
 	}
 }
 
-func TestFilterAlcoholic(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Get("a") == "" {
-			t.Errorf("expected a= param, got none")
-		}
-		_, _ = fmt.Fprint(w, fakeFilterJSON)
-	}))
-	defer ts.Close()
-
-	c := newTestClient(ts)
-	results, err := c.Filter(context.Background(), cocktaildb.FilterOptions{Alcoholic: "Alcoholic"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(results) != 2 {
-		t.Fatalf("len(results) = %d, want 2", len(results))
-	}
-	if results[0].Name != "Margarita" {
-		t.Errorf("results[0].Name = %q, want Margarita", results[0].Name)
-	}
-	if results[0].ID != "11007" {
-		t.Errorf("results[0].ID = %q, want 11007", results[0].ID)
-	}
-}
-
-func TestFilterNoOptions(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprint(w, fakeFilterJSON)
-	}))
-	defer ts.Close()
-
-	c := newTestClient(ts)
-	_, err := c.Filter(context.Background(), cocktaildb.FilterOptions{})
-	if err == nil {
-		t.Error("expected error when no filter options set, got nil")
-	}
-}
-
-func TestGlassesParses(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprint(w, fakeGlassesJSON)
-	}))
-	defer ts.Close()
-
-	c := newTestClient(ts)
-	glasses, err := c.Glasses(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(glasses) != 3 {
-		t.Fatalf("len(glasses) = %d, want 3", len(glasses))
-	}
-	if glasses[0].Name != "Highball glass" {
-		t.Errorf("glasses[0].Name = %q, want Highball glass", glasses[0].Name)
-	}
-}
-
-func TestRandomParsesCocktail(t *testing.T) {
+func TestRandomParsesDrink(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, fakeRandomJSON)
 	}))
@@ -237,16 +191,126 @@ func TestRandomParsesCocktail(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.ID != "11007" {
-		t.Errorf("ID = %q, want 11007", got.ID)
+	if got.ID != "17222" {
+		t.Errorf("ID = %q, want 17222", got.ID)
 	}
-	if got.Name != "Margarita" {
-		t.Errorf("Name = %q, want Margarita", got.Name)
+	if got.Name != "Pisco Sour" {
+		t.Errorf("Name = %q, want Pisco Sour", got.Name)
 	}
-	if got.Rank != 1 {
-		t.Errorf("Rank = %d, want 1", got.Rank)
+	if len(got.Ingredients) != 3 {
+		t.Errorf("len(Ingredients) = %d, want 3", len(got.Ingredients))
 	}
-	if len(got.Ingredients) != 4 {
-		t.Errorf("len(Ingredients) = %d, want 4", len(got.Ingredients))
+}
+
+func TestRandomEmptyResponse(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, `{"drinks":null}`)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	_, err := c.Random(context.Background())
+	if err == nil {
+		t.Error("expected error for empty random response, got nil")
+	}
+}
+
+func TestListCategoriesCategories(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("c") != "list" {
+			t.Errorf("expected c=list param, got %q", r.URL.RawQuery)
+		}
+		_, _ = fmt.Fprint(w, fakeCategoriesJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	cats, err := c.ListCategories(context.Background(), "categories")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cats) != 4 {
+		t.Fatalf("len(cats) = %d, want 4", len(cats))
+	}
+	if cats[0].Name != "Beer" {
+		t.Errorf("cats[0].Name = %q, want Beer", cats[0].Name)
+	}
+}
+
+func TestListCategoriesAlcoholic(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("a") != "list" {
+			t.Errorf("expected a=list param, got %q", r.URL.RawQuery)
+		}
+		_, _ = fmt.Fprint(w, fakeAlcoholicJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	cats, err := c.ListCategories(context.Background(), "alcoholic")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cats) != 3 {
+		t.Fatalf("len(cats) = %d, want 3", len(cats))
+	}
+	if cats[0].Name != "Alcoholic" {
+		t.Errorf("cats[0].Name = %q, want Alcoholic", cats[0].Name)
+	}
+}
+
+func TestListCategoriesGlass(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("g") != "list" {
+			t.Errorf("expected g=list param, got %q", r.URL.RawQuery)
+		}
+		_, _ = fmt.Fprint(w, fakeGlassJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	cats, err := c.ListCategories(context.Background(), "glass")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cats) != 3 {
+		t.Fatalf("len(cats) = %d, want 3", len(cats))
+	}
+	if cats[0].Name != "Highball glass" {
+		t.Errorf("cats[0].Name = %q, want Highball glass", cats[0].Name)
+	}
+}
+
+func TestSearchQuerySentAsParam(t *testing.T) {
+	var gotQuery string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.Query().Get("s")
+		_, _ = fmt.Fprint(w, fakeSearchJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	_, err := c.Search(context.Background(), "margarita", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotQuery != "margarita" {
+		t.Errorf("search query param s = %q, want margarita", gotQuery)
+	}
+}
+
+func TestSearchNoResults(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, `{"drinks":null}`)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	items, err := c.Search(context.Background(), "xyzzy_notreal", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 0 {
+		t.Errorf("len(items) = %d, want 0", len(items))
 	}
 }

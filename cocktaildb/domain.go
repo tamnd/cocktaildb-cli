@@ -31,7 +31,7 @@ func (Domain) Info() kit.DomainInfo {
 			Short:  "TheCocktailDB cocktail search and browser",
 			Long: `cocktaildb fetches cocktail recipes and categories from TheCocktailDB
 public API. No API key required. Supports name search, random picks,
-and category listing.`,
+lookup by ID, and category listing.`,
 			Site: Host,
 			Repo: "https://github.com/tamnd/cocktaildb-cli",
 		},
@@ -42,16 +42,25 @@ and category listing.`,
 func (Domain) Register(app *kit.App) {
 	app.SetClient(newClient)
 
-	// search: find cocktails by name
+	// search: find drinks by name
 	kit.Handle(app, kit.OpMeta{
 		Name:    "search",
 		Group:   "read",
 		List:    true,
 		Summary: "Search cocktails by name",
-		Args:    []kit.Arg{{Name: "name", Help: "cocktail name to search for"}},
+		Args:    []kit.Arg{{Name: "query", Help: "cocktail name to search"}},
 	}, searchOp)
 
-	// random: one random cocktail
+	// lookup: fetch drink by ID
+	kit.Handle(app, kit.OpMeta{
+		Name:    "lookup",
+		Group:   "read",
+		Single:  true,
+		Summary: "Fetch a cocktail by ID",
+		Args:    []kit.Arg{{Name: "id", Help: "drink ID"}},
+	}, lookupOp)
+
+	// random: one random drink
 	kit.Handle(app, kit.OpMeta{
 		Name:    "random",
 		Group:   "read",
@@ -59,38 +68,13 @@ func (Domain) Register(app *kit.App) {
 		Summary: "Fetch a random cocktail",
 	}, randomOp)
 
-	// get: fetch cocktail by ID
-	kit.Handle(app, kit.OpMeta{
-		Name:    "get",
-		Group:   "read",
-		Single:  true,
-		Summary: "Fetch a cocktail by ID",
-		Args:    []kit.Arg{{Name: "id", Help: "cocktail ID"}},
-	}, getOp)
-
-	// filter: filter cocktails by alcoholic, category, or glass
-	kit.Handle(app, kit.OpMeta{
-		Name:    "filter",
-		Group:   "read",
-		List:    true,
-		Summary: "Filter cocktails by alcoholic status, category, or glass type",
-	}, filterOp)
-
-	// categories: list all cocktail categories
+	// categories: list categories, alcoholic types, glasses, or ingredients
 	kit.Handle(app, kit.OpMeta{
 		Name:    "categories",
 		Group:   "read",
 		List:    true,
-		Summary: "List all cocktail categories",
+		Summary: "List categories, alcoholic types, glass types, or ingredients",
 	}, categoriesOp)
-
-	// glasses: list all glass types
-	kit.Handle(app, kit.OpMeta{
-		Name:    "glasses",
-		Group:   "read",
-		List:    true,
-		Summary: "List all glass types",
-	}, glassesOp)
 }
 
 // newClient builds the client from host-resolved config.
@@ -114,43 +98,32 @@ func newClient(_ context.Context, cfg kit.Config) (any, error) {
 // --- inputs ---
 
 type searchInput struct {
-	Name   string        `kit:"arg"          help:"cocktail name to search for"`
+	Query  string        `kit:"arg"          help:"cocktail name to search"`
 	Limit  int           `kit:"flag,inherit" help:"max results"`
 	Delay  time.Duration `kit:"flag,inherit" help:"minimum spacing between requests"`
 	Client *Client       `kit:"inject"`
+}
+
+type lookupInput struct {
+	ID     string  `kit:"arg" help:"drink ID"`
+	Client *Client `kit:"inject"`
 }
 
 type randomInput struct {
 	Client *Client `kit:"inject"`
 }
 
-type getInput struct {
-	ID     string  `kit:"arg" help:"cocktail ID"`
-	Client *Client `kit:"inject"`
-}
-
-type filterInput struct {
-	Alcoholic string  `kit:"flag" help:"filter by alcoholic status (Alcoholic, Non_Alcoholic, Optional_Alcohol)"`
-	Category  string  `kit:"flag" help:"filter by category"`
-	Glass     string  `kit:"flag" help:"filter by glass type"`
-	Limit     int     `kit:"flag,inherit" help:"max results"`
-	Client    *Client `kit:"inject"`
-}
-
 type categoriesInput struct {
-	Client *Client `kit:"inject"`
-}
-
-type glassesInput struct {
+	Type   string  `kit:"flag" help:"list type: categories|alcoholic|glass|ingredients" default:"categories"`
 	Client *Client `kit:"inject"`
 }
 
 // --- handlers ---
 
-func searchOp(ctx context.Context, in searchInput, emit func(Cocktail) error) error {
-	items, err := in.Client.Search(ctx, in.Name, in.Limit)
+func searchOp(ctx context.Context, in searchInput, emit func(Drink) error) error {
+	items, err := in.Client.Search(ctx, in.Query, in.Limit)
 	if err != nil {
-		return mapErr(err)
+		return err
 	}
 	for _, item := range items {
 		if err := emit(item); err != nil {
@@ -160,45 +133,30 @@ func searchOp(ctx context.Context, in searchInput, emit func(Cocktail) error) er
 	return nil
 }
 
-func randomOp(ctx context.Context, in randomInput, emit func(Cocktail) error) error {
-	cocktail, err := in.Client.Random(ctx)
+func lookupOp(ctx context.Context, in lookupInput, emit func(Drink) error) error {
+	drink, err := in.Client.Lookup(ctx, in.ID)
 	if err != nil {
-		return mapErr(err)
+		return err
 	}
-	return emit(cocktail)
+	return emit(drink)
 }
 
-func getOp(ctx context.Context, in getInput, emit func(Cocktail) error) error {
-	cocktail, err := in.Client.Get(ctx, in.ID)
+func randomOp(ctx context.Context, in randomInput, emit func(Drink) error) error {
+	drink, err := in.Client.Random(ctx)
 	if err != nil {
-		return mapErr(err)
+		return err
 	}
-	return emit(cocktail)
-}
-
-func filterOp(ctx context.Context, in filterInput, emit func(FilterResult) error) error {
-	opts := FilterOptions{
-		Alcoholic: in.Alcoholic,
-		Category:  in.Category,
-		Glass:     in.Glass,
-		Limit:     in.Limit,
-	}
-	results, err := in.Client.Filter(ctx, opts)
-	if err != nil {
-		return mapErr(err)
-	}
-	for _, r := range results {
-		if err := emit(r); err != nil {
-			return err
-		}
-	}
-	return nil
+	return emit(drink)
 }
 
 func categoriesOp(ctx context.Context, in categoriesInput, emit func(Category) error) error {
-	cats, err := in.Client.Categories(ctx)
+	listType := in.Type
+	if listType == "" {
+		listType = "categories"
+	}
+	cats, err := in.Client.ListCategories(ctx, listType)
 	if err != nil {
-		return mapErr(err)
+		return err
 	}
 	for _, cat := range cats {
 		if err := emit(cat); err != nil {
@@ -208,40 +166,35 @@ func categoriesOp(ctx context.Context, in categoriesInput, emit func(Category) e
 	return nil
 }
 
-func glassesOp(ctx context.Context, in glassesInput, emit func(GlassType) error) error {
-	glasses, err := in.Client.Glasses(ctx)
-	if err != nil {
-		return mapErr(err)
-	}
-	for _, g := range glasses {
-		if err := emit(g); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // --- Resolver: pure string functions, no network ---
 
 // Classify turns an input into the canonical (type, id).
+// Numeric inputs are treated as IDs; others as search queries.
 func (Domain) Classify(input string) (uriType, id string, err error) {
 	if input == "" {
 		return "", "", errs.Usage("empty cocktaildb reference")
 	}
-	return "cocktail", input, nil
+	isNumeric := true
+	for _, ch := range input {
+		if ch < '0' || ch > '9' {
+			isNumeric = false
+			break
+		}
+	}
+	if isNumeric {
+		return "id", input, nil
+	}
+	return "query", input, nil
 }
 
 // Locate returns the live https URL for a (type, id).
 func (Domain) Locate(uriType, id string) (string, error) {
 	switch uriType {
-	case "cocktail":
+	case "id":
 		return "https://www.thecocktaildb.com/drink/" + id, nil
+	case "query":
+		return "https://www.thecocktaildb.com/drink/" + id + "-Detail.php", nil
 	default:
 		return "", errs.Usage("cocktaildb has no resource type %q", uriType)
 	}
-}
-
-// mapErr converts a library error into the kit error kind.
-func mapErr(err error) error {
-	return err
 }
