@@ -89,7 +89,7 @@ func TestDefaultConfigRate(t *testing.T) {
 	}
 }
 
-func TestToIngredients(t *testing.T) {
+func TestIngredientPairs(t *testing.T) {
 	d := rawDrink{
 		StrIngredient1: "Tequila",
 		StrMeasure1:    "1 1/2 oz",
@@ -99,27 +99,21 @@ func TestToIngredients(t *testing.T) {
 		StrMeasure3:    "1 oz",
 		StrIngredient4: "Salt",
 		StrMeasure4:    "",
-		// Ingredient5 empty — should stop here
+		// Ingredient5 empty -- should stop here
 	}
-	ings := d.toIngredients()
-	if len(ings) != 4 {
-		t.Fatalf("toIngredients() len = %d, want 4", len(ings))
+	pairs := d.ingredientPairs()
+	if len(pairs) != 4 {
+		t.Fatalf("ingredientPairs() len = %d, want 4", len(pairs))
 	}
-	if ings[0].Name != "Tequila" {
-		t.Errorf("ings[0].Name = %q, want Tequila", ings[0].Name)
+	if pairs[0] != "Tequila:1 1/2 oz" {
+		t.Errorf("pairs[0] = %q, want Tequila:1 1/2 oz", pairs[0])
 	}
-	if ings[0].Measure != "1 1/2 oz" {
-		t.Errorf("ings[0].Measure = %q, want 1 1/2 oz", ings[0].Measure)
-	}
-	if ings[3].Name != "Salt" {
-		t.Errorf("ings[3].Name = %q, want Salt", ings[3].Name)
-	}
-	if ings[3].Measure != "" {
-		t.Errorf("ings[3].Measure = %q, want empty", ings[3].Measure)
+	if pairs[3] != "Salt" {
+		t.Errorf("pairs[3] = %q, want Salt (no colon when measure empty)", pairs[3])
 	}
 }
 
-func TestToDrink(t *testing.T) {
+func TestToCocktail(t *testing.T) {
 	d := rawDrink{
 		IDDrink:         "11007",
 		StrDrink:        "Margarita",
@@ -131,14 +125,35 @@ func TestToDrink(t *testing.T) {
 		StrIngredient1:  "Tequila",
 		StrMeasure1:     "1 oz",
 	}
-	drink := toDrink(d)
-	if drink.ID != "11007" {
-		t.Errorf("ID = %q, want 11007", drink.ID)
+	c := toCocktail(d)
+	if c.ID != "11007" {
+		t.Errorf("ID = %q, want 11007", c.ID)
 	}
-	if drink.Name != "Margarita" {
-		t.Errorf("Name = %q, want Margarita", drink.Name)
+	if c.Name != "Margarita" {
+		t.Errorf("Name = %q, want Margarita", c.Name)
 	}
-	if len(drink.Ingredients) != 1 {
-		t.Errorf("Ingredients len = %d, want 1", len(drink.Ingredients))
+	if c.Ingredients != "Tequila:1 oz" {
+		t.Errorf("Ingredients = %q, want Tequila:1 oz", c.Ingredients)
+	}
+	if c.Instructions != "Rub the rim." {
+		t.Errorf("Instructions = %q, want Rub the rim.", c.Instructions)
+	}
+}
+
+func TestToCocktailTruncatesInstructions(t *testing.T) {
+	long := make([]byte, 250)
+	for i := range long {
+		long[i] = 'A'
+	}
+	d := rawDrink{
+		IDDrink:         "x",
+		StrInstructions: string(long),
+	}
+	c := toCocktail(d)
+	if len(c.Instructions) != 203 {
+		t.Errorf("Instructions len = %d, want 203 (200 + ...)", len(c.Instructions))
+	}
+	if c.Instructions[200:] != "..." {
+		t.Errorf("Instructions suffix = %q, want ...", c.Instructions[200:])
 	}
 }

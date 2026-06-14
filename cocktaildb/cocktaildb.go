@@ -57,9 +57,9 @@ func NewClient(cfg Config) *Client {
 	}
 }
 
-// Search searches drinks by name. It returns at most limit results (pass 0
+// Search searches cocktails by name. It returns at most limit results (pass 0
 // for all). If the API returns no results it returns an empty slice and nil error.
-func (c *Client) Search(ctx context.Context, name string, limit int) ([]Drink, error) {
+func (c *Client) Search(ctx context.Context, name string, limit int) ([]Cocktail, error) {
 	u := fmt.Sprintf("%s/search.php?s=%s", c.cfg.BaseURL, neturl.QueryEscape(name))
 	body, err := c.get(ctx, u)
 	if err != nil {
@@ -69,9 +69,9 @@ func (c *Client) Search(ctx context.Context, name string, limit int) ([]Drink, e
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, fmt.Errorf("decode search: %w", err)
 	}
-	items := make([]Drink, 0, len(resp.Drinks))
+	items := make([]Cocktail, 0, len(resp.Drinks))
 	for _, d := range resp.Drinks {
-		items = append(items, toDrink(d))
+		items = append(items, toCocktail(d))
 	}
 	if limit > 0 && limit < len(items) {
 		items = items[:limit]
@@ -79,38 +79,38 @@ func (c *Client) Search(ctx context.Context, name string, limit int) ([]Drink, e
 	return items, nil
 }
 
-// Lookup returns a drink by ID. Returns an error if the ID is not found.
-func (c *Client) Lookup(ctx context.Context, id string) (Drink, error) {
+// Lookup returns a cocktail by ID. Returns an error if the ID is not found.
+func (c *Client) Lookup(ctx context.Context, id string) (Cocktail, error) {
 	u := fmt.Sprintf("%s/lookup.php?i=%s", c.cfg.BaseURL, neturl.QueryEscape(id))
 	body, err := c.get(ctx, u)
 	if err != nil {
-		return Drink{}, err
+		return Cocktail{}, err
 	}
 	var resp drinksResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return Drink{}, fmt.Errorf("decode lookup: %w", err)
+		return Cocktail{}, fmt.Errorf("decode lookup: %w", err)
 	}
 	if len(resp.Drinks) == 0 {
-		return Drink{}, fmt.Errorf("drink %s: not found", id)
+		return Cocktail{}, fmt.Errorf("cocktail %s: not found", id)
 	}
-	return toDrink(resp.Drinks[0]), nil
+	return toCocktail(resp.Drinks[0]), nil
 }
 
-// Random returns one random drink from the API.
-func (c *Client) Random(ctx context.Context) (Drink, error) {
+// Random returns one random cocktail from the API.
+func (c *Client) Random(ctx context.Context) (Cocktail, error) {
 	u := fmt.Sprintf("%s/random.php", c.cfg.BaseURL)
 	body, err := c.get(ctx, u)
 	if err != nil {
-		return Drink{}, err
+		return Cocktail{}, err
 	}
 	var resp drinksResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return Drink{}, fmt.Errorf("decode random: %w", err)
+		return Cocktail{}, fmt.Errorf("decode random: %w", err)
 	}
 	if len(resp.Drinks) == 0 {
-		return Drink{}, fmt.Errorf("random: no drink returned")
+		return Cocktail{}, fmt.Errorf("random: no cocktail returned")
 	}
-	return toDrink(resp.Drinks[0]), nil
+	return toCocktail(resp.Drinks[0]), nil
 }
 
 // ListCategories returns all entries for a given list type.
