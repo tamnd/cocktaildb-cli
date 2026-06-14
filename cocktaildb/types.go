@@ -23,6 +23,25 @@ type Category struct {
 	Name string `kit:"id" json:"name"` // strCategory
 }
 
+// FilterResult is the minimal drink record returned by the filter endpoint.
+type FilterResult struct {
+	ID        string `kit:"id" json:"id"`
+	Name      string `json:"name"`
+	Thumbnail string `json:"thumbnail"`
+}
+
+// --- wire types for filter response ---
+
+type rawFilterDrink struct {
+	IDDrink       string `json:"idDrink"`
+	StrDrink      string `json:"strDrink"`
+	StrDrinkThumb string `json:"strDrinkThumb"`
+}
+
+type filterResponse struct {
+	Drinks []rawFilterDrink `json:"drinks"`
+}
+
 // --- wire types (unexported, only used for JSON decoding) ---
 
 type rawDrink struct {
