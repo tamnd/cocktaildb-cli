@@ -351,6 +351,55 @@ func TestInstructionsTruncatedAt200(t *testing.T) {
 	}
 }
 
+const fakeFilterJSON = `{"drinks":[
+  {"idDrink":"17222","strDrink":"Pisco Sour","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/tsssur1439907622.jpg"},
+  {"idDrink":"11007","strDrink":"Margarita","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"}
+]}`
+
+func TestFilterByIngredient(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("i") != "vodka" {
+			t.Errorf("expected i=vodka, got %q", r.URL.Query().Get("i"))
+		}
+		_, _ = fmt.Fprint(w, fakeFilterJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	items, err := c.Filter(context.Background(), "vodka")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("len(items) = %d, want 2", len(items))
+	}
+	if items[0].ID != "17222" {
+		t.Errorf("items[0].ID = %q, want 17222", items[0].ID)
+	}
+	if items[0].Name != "Pisco Sour" {
+		t.Errorf("items[0].Name = %q, want Pisco Sour", items[0].Name)
+	}
+	if items[1].Name != "Margarita" {
+		t.Errorf("items[1].Name = %q, want Margarita", items[1].Name)
+	}
+}
+
+func TestFilterNoResults(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, `{"drinks":null}`)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	items, err := c.Filter(context.Background(), "xyzzy_notreal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 0 {
+		t.Errorf("len(items) = %d, want 0", len(items))
+	}
+}
+
 func TestIngredientsMeasureMissing(t *testing.T) {
 	// When a measure is empty, the ingredient should appear without colon
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

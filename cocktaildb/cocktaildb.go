@@ -113,6 +113,31 @@ func (c *Client) Random(ctx context.Context) (Cocktail, error) {
 	return toCocktail(resp.Drinks[0]), nil
 }
 
+// Filter returns cocktails that contain the given ingredient. The results are
+// minimal (ID, name, thumbnail only) since the filter endpoint does not return
+// full drink details. Pass the ingredient name exactly as it appears on the site
+// (e.g. "vodka", "Gin").
+func (c *Client) Filter(ctx context.Context, ingredient string) ([]FilterResult, error) {
+	u := fmt.Sprintf("%s/filter.php?i=%s", c.cfg.BaseURL, neturl.QueryEscape(ingredient))
+	body, err := c.get(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+	var resp filterResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, fmt.Errorf("decode filter: %w", err)
+	}
+	items := make([]FilterResult, 0, len(resp.Drinks))
+	for _, d := range resp.Drinks {
+		items = append(items, FilterResult{
+			ID:        d.IDDrink,
+			Name:      d.StrDrink,
+			Thumbnail: d.StrDrinkThumb,
+		})
+	}
+	return items, nil
+}
+
 // ListCategories returns all entries for a given list type.
 // listType must be one of: "categories", "alcoholic", "glass", "ingredients".
 func (c *Client) ListCategories(ctx context.Context, listType string) ([]Category, error) {

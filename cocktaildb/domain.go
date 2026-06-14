@@ -51,14 +51,23 @@ func (Domain) Register(app *kit.App) {
 		Args:    []kit.Arg{{Name: "query", Help: "cocktail name to search"}},
 	}, searchOp)
 
-	// cocktail: fetch drink by ID
+	// lookup: fetch drink by ID
 	kit.Handle(app, kit.OpMeta{
-		Name:    "cocktail",
+		Name:    "lookup",
 		Group:   "read",
 		Single:  true,
 		Summary: "Fetch a cocktail by ID",
 		Args:    []kit.Arg{{Name: "id", Help: "drink ID"}},
 	}, cocktailOp)
+
+	// filter: find drinks by ingredient
+	kit.Handle(app, kit.OpMeta{
+		Name:    "filter",
+		Group:   "read",
+		List:    true,
+		Summary: "Filter cocktails by ingredient",
+		Args:    []kit.Arg{{Name: "ingredient", Help: "ingredient name (e.g. vodka)"}},
+	}, filterOp)
 
 	// random: one random drink
 	kit.Handle(app, kit.OpMeta{
@@ -118,6 +127,11 @@ type categoriesInput struct {
 	Client *Client `kit:"inject"`
 }
 
+type filterInput struct {
+	Ingredient string  `kit:"arg" help:"ingredient name (e.g. vodka)"`
+	Client     *Client `kit:"inject"`
+}
+
 // --- handlers ---
 
 func searchOp(ctx context.Context, in searchInput, emit func(Cocktail) error) error {
@@ -147,6 +161,19 @@ func randomOp(ctx context.Context, in randomInput, emit func(Cocktail) error) er
 		return err
 	}
 	return emit(drink)
+}
+
+func filterOp(ctx context.Context, in filterInput, emit func(FilterResult) error) error {
+	items, err := in.Client.Filter(ctx, in.Ingredient)
+	if err != nil {
+		return err
+	}
+	for _, item := range items {
+		if err := emit(item); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func categoriesOp(ctx context.Context, in categoriesInput, emit func(Category) error) error {
