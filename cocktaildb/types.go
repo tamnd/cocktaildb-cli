@@ -27,6 +27,21 @@ type Category struct {
 	Name string `json:"name"`
 }
 
+// GlassType is one glass type from TheCocktailDB.
+type GlassType struct {
+	Rank int    `json:"rank"`
+	Name string `json:"name"`
+}
+
+// FilterResult is a summary drink object returned by the filter endpoint.
+// It does not include ingredients; use Get to fetch full details.
+type FilterResult struct {
+	Rank      int    `json:"rank"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Thumbnail string `json:"thumbnail"`
+}
+
 // --- wire types (unexported, only used for JSON decoding) ---
 
 type rawDrink struct {
@@ -79,6 +94,22 @@ type categoriesResponse struct {
 	Drinks []struct {
 		StrCategory string `json:"strCategory"`
 	} `json:"drinks"`
+}
+
+type glassesResponse struct {
+	Drinks []struct {
+		StrGlass string `json:"strGlass"`
+	} `json:"drinks"`
+}
+
+type filterDrink struct {
+	IDDrink       string `json:"idDrink"`
+	StrDrink      string `json:"strDrink"`
+	StrDrinkThumb string `json:"strDrinkThumb"`
+}
+
+type filterResponse struct {
+	Drinks []filterDrink `json:"drinks"`
 }
 
 // parseIngredients converts the flat strIngredientN / strMeasureN fields of a

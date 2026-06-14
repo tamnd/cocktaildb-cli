@@ -96,6 +96,68 @@ func (c *Client) Random(ctx context.Context) (Cocktail, error) {
 	return toCocktail(resp.Drinks[0], 1), nil
 }
 
+// Get returns a cocktail by ID. Returns an error if the ID is not found.
+func (c *Client) Get(ctx context.Context, id string) (Cocktail, error) {
+	u := fmt.Sprintf("%s/lookup.php?i=%s", c.cfg.BaseURL, neturl.QueryEscape(id))
+	body, err := c.get(ctx, u)
+	if err != nil {
+		return Cocktail{}, err
+	}
+	var resp drinksResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return Cocktail{}, fmt.Errorf("decode lookup: %w", err)
+	}
+	if len(resp.Drinks) == 0 {
+		return Cocktail{}, fmt.Errorf("cocktail %s: not found", id)
+	}
+	return toCocktail(resp.Drinks[0], 1), nil
+}
+
+// FilterOptions controls which filter is applied to the Filter endpoint.
+type FilterOptions struct {
+	Alcoholic string // "Alcoholic", "Non_Alcoholic", "Optional_Alcohol"
+	Category  string // e.g. "Cocktail", "Shot"
+	Glass     string // e.g. "Cocktail_glass"
+	Limit     int
+}
+
+// Filter returns summary cocktail records matching the given filter options.
+// At least one of Alcoholic, Category, or Glass must be set.
+func (c *Client) Filter(ctx context.Context, opts FilterOptions) ([]FilterResult, error) {
+	var param string
+	if opts.Alcoholic != "" {
+		param = "a=" + neturl.QueryEscape(opts.Alcoholic)
+	} else if opts.Category != "" {
+		param = "c=" + neturl.QueryEscape(opts.Category)
+	} else if opts.Glass != "" {
+		param = "g=" + neturl.QueryEscape(opts.Glass)
+	} else {
+		return nil, fmt.Errorf("filter: at least one of alcoholic, category, or glass must be set")
+	}
+	u := fmt.Sprintf("%s/filter.php?%s", c.cfg.BaseURL, param)
+	body, err := c.get(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+	var resp filterResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, fmt.Errorf("decode filter: %w", err)
+	}
+	results := make([]FilterResult, 0, len(resp.Drinks))
+	for i, d := range resp.Drinks {
+		results = append(results, FilterResult{
+			Rank:      i + 1,
+			ID:        d.IDDrink,
+			Name:      d.StrDrink,
+			Thumbnail: d.StrDrinkThumb,
+		})
+	}
+	if opts.Limit > 0 && opts.Limit < len(results) {
+		results = results[:opts.Limit]
+	}
+	return results, nil
+}
+
 // Categories returns all cocktail categories.
 func (c *Client) Categories(ctx context.Context) ([]Category, error) {
 	u := fmt.Sprintf("%s/list.php?c=list", c.cfg.BaseURL)
@@ -112,6 +174,24 @@ func (c *Client) Categories(ctx context.Context) ([]Category, error) {
 		cats = append(cats, Category{Rank: i + 1, Name: d.StrCategory})
 	}
 	return cats, nil
+}
+
+// Glasses returns all glass types.
+func (c *Client) Glasses(ctx context.Context) ([]GlassType, error) {
+	u := fmt.Sprintf("%s/list.php?g=list", c.cfg.BaseURL)
+	body, err := c.get(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+	var resp glassesResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, fmt.Errorf("decode glasses: %w", err)
+	}
+	glasses := make([]GlassType, 0, len(resp.Drinks))
+	for i, d := range resp.Drinks {
+		glasses = append(glasses, GlassType{Rank: i + 1, Name: d.StrGlass})
+	}
+	return glasses, nil
 }
 
 func (c *Client) get(ctx context.Context, url string) ([]byte, error) {

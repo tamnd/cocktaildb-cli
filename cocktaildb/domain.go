@@ -59,6 +59,23 @@ func (Domain) Register(app *kit.App) {
 		Summary: "Fetch a random cocktail",
 	}, randomOp)
 
+	// get: fetch cocktail by ID
+	kit.Handle(app, kit.OpMeta{
+		Name:    "get",
+		Group:   "read",
+		Single:  true,
+		Summary: "Fetch a cocktail by ID",
+		Args:    []kit.Arg{{Name: "id", Help: "cocktail ID"}},
+	}, getOp)
+
+	// filter: filter cocktails by alcoholic, category, or glass
+	kit.Handle(app, kit.OpMeta{
+		Name:    "filter",
+		Group:   "read",
+		List:    true,
+		Summary: "Filter cocktails by alcoholic status, category, or glass type",
+	}, filterOp)
+
 	// categories: list all cocktail categories
 	kit.Handle(app, kit.OpMeta{
 		Name:    "categories",
@@ -66,6 +83,14 @@ func (Domain) Register(app *kit.App) {
 		List:    true,
 		Summary: "List all cocktail categories",
 	}, categoriesOp)
+
+	// glasses: list all glass types
+	kit.Handle(app, kit.OpMeta{
+		Name:    "glasses",
+		Group:   "read",
+		List:    true,
+		Summary: "List all glass types",
+	}, glassesOp)
 }
 
 // newClient builds the client from host-resolved config.
@@ -99,7 +124,24 @@ type randomInput struct {
 	Client *Client `kit:"inject"`
 }
 
+type getInput struct {
+	ID     string  `kit:"arg" help:"cocktail ID"`
+	Client *Client `kit:"inject"`
+}
+
+type filterInput struct {
+	Alcoholic string  `kit:"flag" help:"filter by alcoholic status (Alcoholic, Non_Alcoholic, Optional_Alcohol)"`
+	Category  string  `kit:"flag" help:"filter by category"`
+	Glass     string  `kit:"flag" help:"filter by glass type"`
+	Limit     int     `kit:"flag,inherit" help:"max results"`
+	Client    *Client `kit:"inject"`
+}
+
 type categoriesInput struct {
+	Client *Client `kit:"inject"`
+}
+
+type glassesInput struct {
 	Client *Client `kit:"inject"`
 }
 
@@ -126,6 +168,33 @@ func randomOp(ctx context.Context, in randomInput, emit func(Cocktail) error) er
 	return emit(cocktail)
 }
 
+func getOp(ctx context.Context, in getInput, emit func(Cocktail) error) error {
+	cocktail, err := in.Client.Get(ctx, in.ID)
+	if err != nil {
+		return mapErr(err)
+	}
+	return emit(cocktail)
+}
+
+func filterOp(ctx context.Context, in filterInput, emit func(FilterResult) error) error {
+	opts := FilterOptions{
+		Alcoholic: in.Alcoholic,
+		Category:  in.Category,
+		Glass:     in.Glass,
+		Limit:     in.Limit,
+	}
+	results, err := in.Client.Filter(ctx, opts)
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, r := range results {
+		if err := emit(r); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func categoriesOp(ctx context.Context, in categoriesInput, emit func(Category) error) error {
 	cats, err := in.Client.Categories(ctx)
 	if err != nil {
@@ -133,6 +202,19 @@ func categoriesOp(ctx context.Context, in categoriesInput, emit func(Category) e
 	}
 	for _, cat := range cats {
 		if err := emit(cat); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func glassesOp(ctx context.Context, in glassesInput, emit func(GlassType) error) error {
+	glasses, err := in.Client.Glasses(ctx)
+	if err != nil {
+		return mapErr(err)
+	}
+	for _, g := range glasses {
+		if err := emit(g); err != nil {
 			return err
 		}
 	}

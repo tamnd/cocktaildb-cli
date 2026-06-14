@@ -123,6 +123,109 @@ func TestSearchRetriesOn503(t *testing.T) {
 	}
 }
 
+const fakeFilterJSON = `{"drinks":[
+  {"idDrink":"11007","strDrink":"Margarita","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"},
+  {"idDrink":"11118","strDrink":"Blue Margarita","strDrinkThumb":"https://www.thecocktaildb.com/images/media/drink/qtvvyq1439905913.jpg"}
+]}`
+
+const fakeGlassesJSON = `{"drinks":[
+  {"strGlass":"Highball glass"},
+  {"strGlass":"Cocktail glass"},
+  {"strGlass":"Old-fashioned glass"}
+]}`
+
+func TestGetByID(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("i") != "11007" {
+			t.Errorf("expected i=11007, got %q", r.URL.Query().Get("i"))
+		}
+		_, _ = fmt.Fprint(w, fakeRandomJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	got, err := c.Get(context.Background(), "11007")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != "11007" {
+		t.Errorf("ID = %q, want 11007", got.ID)
+	}
+	if got.Name != "Margarita" {
+		t.Errorf("Name = %q, want Margarita", got.Name)
+	}
+}
+
+func TestGetNotFound(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, `{"drinks":null}`)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	_, err := c.Get(context.Background(), "99999999")
+	if err == nil {
+		t.Error("expected error for not-found ID, got nil")
+	}
+}
+
+func TestFilterAlcoholic(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("a") == "" {
+			t.Errorf("expected a= param, got none")
+		}
+		_, _ = fmt.Fprint(w, fakeFilterJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	results, err := c.Filter(context.Background(), cocktaildb.FilterOptions{Alcoholic: "Alcoholic"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 2 {
+		t.Fatalf("len(results) = %d, want 2", len(results))
+	}
+	if results[0].Name != "Margarita" {
+		t.Errorf("results[0].Name = %q, want Margarita", results[0].Name)
+	}
+	if results[0].ID != "11007" {
+		t.Errorf("results[0].ID = %q, want 11007", results[0].ID)
+	}
+}
+
+func TestFilterNoOptions(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, fakeFilterJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	_, err := c.Filter(context.Background(), cocktaildb.FilterOptions{})
+	if err == nil {
+		t.Error("expected error when no filter options set, got nil")
+	}
+}
+
+func TestGlassesParses(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, fakeGlassesJSON)
+	}))
+	defer ts.Close()
+
+	c := newTestClient(ts)
+	glasses, err := c.Glasses(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(glasses) != 3 {
+		t.Fatalf("len(glasses) = %d, want 3", len(glasses))
+	}
+	if glasses[0].Name != "Highball glass" {
+		t.Errorf("glasses[0].Name = %q, want Highball glass", glasses[0].Name)
+	}
+}
+
 func TestRandomParsesCocktail(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, fakeRandomJSON)
